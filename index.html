@@ -1,0 +1,2036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engagement OS — Meridian Advisory</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs/dist/pptxgen.bundled.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --color-primary:          #ffffff;
+      --color-accent:           #1c69d4;
+      --color-surface:          #1a1a1a;
+      --color-text:             #ffffff;
+      --color-text-muted:       #7e7e7e;
+      --font-family:            'BMWTypeNextLatin', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+      --color-canvas:           #000000;
+      --color-surface-elevated: #262626;
+      --color-surface-soft:     #0d0d0d;
+      --color-hairline:         #3c3c3c;
+      --color-hairline-strong:  #262626;
+      --color-body:             #bbbbbb;
+      --color-body-strong:      #e6e6e6;
+      --color-m-blue-light:     #0066b1;
+      --color-m-blue-dark:      #1c69d4;
+      --color-m-red:            #e22718;
+      --color-warning:          #f4b400;
+      --color-success:          #0fa336;
+      --color-on-primary:       #000000;
+
+      --color-status-green:       #0fa336;
+      --color-status-green-muted: rgba(15,163,54,0.12);
+      --color-status-amber:       #f4b400;
+      --color-status-amber-muted: rgba(244,180,0,0.12);
+      --color-status-red:         #e22718;
+      --color-status-red-muted:   rgba(226,39,24,0.12);
+    }
+
+    body {
+      font-family: var(--font-family);
+      background: var(--color-canvas);
+      color: var(--color-text);
+      font-size: 14px;
+      font-weight: 300;
+      line-height: 1.55;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      width: 220px;
+      min-width: 220px;
+      background: var(--color-surface-soft);
+      border-right: 1px solid var(--color-hairline);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: fixed;
+      left: 0; top: 0;
+      z-index: 10;
+    }
+    #sidebar-logo { padding: 20px 16px 0; }
+    .wordmark {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-text);
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+    }
+    .submark {
+      font-size: 10px;
+      color: var(--color-text-muted);
+      margin-top: 2px;
+      font-weight: 400;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .m-stripe {
+      height: 3px;
+      margin: 12px 0 0;
+      background: linear-gradient(to right, #0066b1 33.33%, #1c69d4 33.33% 66.66%, #e22718 66.66%);
+    }
+    #sidebar-nav {
+      flex: 1;
+      padding: 16px 0;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 16px;
+      height: 40px;
+      border-radius: 0;
+      cursor: pointer;
+      color: var(--color-body);
+      font-family: var(--font-family);
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+      border: none;
+      border-left: 2px solid transparent;
+      background: none;
+      width: 100%;
+      text-align: left;
+      transition: color 0.12s, background 0.12s, border-color 0.12s;
+    }
+    .nav-item:hover { background: var(--color-surface); color: var(--color-text); }
+    .nav-item.active {
+      background: var(--color-surface);
+      color: var(--color-text);
+      border-left-color: var(--color-accent);
+      font-weight: 700;
+    }
+    .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+    #sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid var(--color-hairline);
+    }
+
+    /* ── MAIN ── */
+    #main { margin-left: 220px; flex: 1; height: 100vh; overflow-y: auto; }
+    .tab-pane { display: none; padding: 28px 32px; min-height: 100%; }
+    .tab-pane.active { display: block; }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .page-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--color-text);
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 20px;
+      height: 40px;
+      border-radius: 0;
+      font-family: var(--font-family);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid transparent;
+      white-space: nowrap;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+    .btn-primary  { background: var(--color-primary); color: var(--color-canvas); border-color: var(--color-primary); }
+    .btn-primary:hover { background: var(--color-body-strong); border-color: var(--color-body-strong); }
+    .btn-secondary { background: transparent; color: var(--color-text); border-color: var(--color-text); }
+    .btn-secondary:hover { background: rgba(255,255,255,0.06); }
+    .btn-ghost { background: transparent; color: var(--color-text-muted); border-color: transparent; }
+    .btn-ghost:hover { background: var(--color-surface-elevated); color: var(--color-text); }
+    .btn-accent { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+    .btn-accent:hover { background: var(--color-m-blue-light); border-color: var(--color-m-blue-light); }
+    .btn-xs { height: 26px; padding: 0 10px; font-size: 10px; letter-spacing: 1px; }
+    .btn-sm { height: 32px; padding: 0 14px; font-size: 11px; }
+    .btn-block { width: 100%; justify-content: center; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── BADGES ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 2px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+    .badge-green  { color: var(--color-status-green); background: var(--color-status-green-muted); }
+    .badge-amber  { color: var(--color-status-amber); background: var(--color-status-amber-muted); }
+    .badge-red    { color: var(--color-status-red);   background: var(--color-status-red-muted); }
+    .badge-neutral{ color: var(--color-text-muted);   background: var(--color-surface-elevated); }
+
+    /* ── SECTION CARD ── */
+    .section-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-hairline);
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .section-card-header {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--color-hairline);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+    }
+    .section-card-body { padding: 20px; }
+
+    /* ── DATA TABLE ── */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--color-text-muted);
+      text-align: left;
+      padding: 0 12px 10px;
+      border-bottom: 1px solid var(--color-hairline);
+    }
+    .data-table td {
+      font-size: 13px;
+      font-weight: 300;
+      padding: 0 12px;
+      height: 42px;
+      border-bottom: 1px solid var(--color-hairline);
+      color: var(--color-body-strong);
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tbody tr { transition: background 0.1s; cursor: default; }
+    .data-table tbody tr:hover { background: var(--color-surface-elevated); }
+    .data-table tbody tr.selected { background: rgba(28,105,212,0.12); }
+    .data-table td.mono { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+    /* ── STAT CARDS ── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-hairline);
+      padding: 16px;
+    }
+    .stat-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--color-text-muted);
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--color-text);
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-value.accent  { color: var(--color-accent); }
+    .stat-value.primary { color: var(--color-text); }
+    .stat-value.red     { color: var(--color-status-red); }
+
+    /* ── PROGRESS BAR ── */
+    .progress-wrap { height: 3px; background: var(--color-hairline); overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--color-accent); transition: width 0.3s; }
+
+    /* ── PIPELINE ── */
+    #funnel-wrap {
+      background: var(--color-surface);
+      border: 1px solid var(--color-hairline);
+      padding: 14px 20px;
+      margin-bottom: 20px;
+    }
+    #funnel-wrap canvas { max-height: 90px; }
+    .kanban-board {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+    .kanban-col {
+      background: var(--color-surface);
+      border: 1px solid var(--color-hairline);
+      padding: 12px;
+      min-height: 300px;
+    }
+    .kanban-col-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--color-hairline);
+    }
+    .kanban-col-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--color-text-muted);
+    }
+    .col-count {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--color-text-muted);
+      background: var(--color-surface-elevated);
+      padding: 1px 7px;
+    }
+
+    /* Deal card */
+    .deal-card {
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-hairline);
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+    .deal-card:last-child { margin-bottom: 0; }
+    .deal-client {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--color-text);
+      margin-bottom: 2px;
+      text-transform: uppercase;
+    }
+    .deal-title  { font-size: 12px; font-weight: 300; color: var(--color-body); margin-bottom: 8px; line-height: 1.4; }
+    .deal-meta   { display: flex; align-items: center; justify-content: space-between; }
+    .deal-value  { font-size: 14px; font-weight: 700; color: var(--color-accent); font-variant-numeric: tabular-nums; }
+    .deal-days   { font-size: 11px; font-weight: 300; color: var(--color-text-muted); }
+    .deal-actions{ display: flex; gap: 5px; flex-wrap: wrap; margin-top: 9px; }
+
+    /* ── PROJECTS ── */
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .project-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-hairline);
+      padding: 16px;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+    }
+    .project-card:hover  { border-color: var(--color-body); background: var(--color-surface-elevated); }
+    .project-card.active { border-color: var(--color-accent); background: var(--color-surface-elevated); }
+    .pc-client { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--color-text-muted); margin-bottom: 4px; }
+    .pc-title  { font-size: 14px; font-weight: 700; color: var(--color-text); margin-bottom: 12px; }
+    .pc-meta   { display: flex; justify-content: space-between; font-size: 11px; font-weight: 300; margin-top: 5px; }
+
+    /* Task kanban */
+    .task-kanban {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .task-col {
+      background: var(--color-surface);
+      border: 1px solid var(--color-hairline);
+      padding: 12px;
+      min-height: 180px;
+    }
+    .task-card {
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-hairline);
+      border-left: 3px solid transparent;
+      padding: 9px 10px 9px 9px;
+      margin-bottom: 7px;
+      cursor: pointer;
+      transition: border-top-color 0.12s, border-right-color 0.12s, border-bottom-color 0.12s;
+      position: relative;
+    }
+    .task-card:hover { border-top-color: var(--color-body); border-right-color: var(--color-body); border-bottom-color: var(--color-body); }
+    .task-card.overdue { border-left-color: var(--color-status-red); }
+    .task-title { font-size: 13px; font-weight: 400; color: var(--color-body-strong); margin-bottom: 5px; padding-right: 18px; }
+    .task-meta  { display: flex; justify-content: space-between; font-size: 11px; font-weight: 300; color: var(--color-text-muted); }
+    .task-meta .overdue-date { color: var(--color-status-red); font-weight: 700; }
+    .task-delete {
+      position: absolute; top: 7px; right: 7px;
+      width: 18px; height: 18px;
+      display: flex; align-items: center; justify-content: center;
+      border: none; background: none;
+      color: var(--color-text-muted); font-size: 13px; line-height: 1;
+      cursor: pointer; opacity: 0;
+      transition: opacity 0.12s, color 0.12s, background 0.12s;
+    }
+    .task-card:hover .task-delete { opacity: 1; }
+    .task-delete:hover { color: var(--color-status-red); background: var(--color-status-red-muted); }
+
+    .add-task-form {
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-hairline);
+      padding: 10px;
+      margin-top: 8px;
+    }
+    .add-task-form input, .add-task-form select {
+      width: 100%;
+      background: var(--color-surface);
+      border: 1px solid var(--color-hairline);
+      color: var(--color-text);
+      font-family: var(--font-family);
+      font-size: 12px;
+      font-weight: 300;
+      padding: 7px 10px;
+      margin-bottom: 6px;
+      outline: none;
+    }
+    .add-task-form input:focus, .add-task-form select:focus { border-color: var(--color-accent); }
+    .add-task-form input::placeholder { color: var(--color-text-muted); }
+    .add-task-form input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1) opacity(0.5); cursor: pointer; }
+    .add-task-form-actions { display: flex; gap: 6px; }
+
+    /* ── REPORTS ── */
+    .chart-wrap { background: var(--color-surface-elevated); padding: 16px; margin-bottom: 16px; }
+    .chart-wrap canvas { max-height: 160px; }
+    .attention-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--color-text-muted);
+      margin-bottom: 10px;
+    }
+    .stale-row td:first-child   { border-left: 3px solid var(--color-status-amber); }
+    .overdue-row td:first-child { border-left: 3px solid var(--color-status-red); }
+    .ph-card {
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-hairline);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+    .ph-client { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--color-text-muted); margin-bottom: 2px; }
+    .ph-title  { font-size: 14px; font-weight: 700; color: var(--color-text); margin-bottom: 10px; }
+    .ph-meta   { display: flex; justify-content: space-between; font-size: 11px; font-weight: 300; margin-top: 5px; }
+
+    /* ── ASK TAB ── */
+    #ask-wrap {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 120px);
+      background: var(--color-surface);
+      border: 1px solid var(--color-hairline);
+      overflow: hidden;
+    }
+    #ask-messages {
+      flex: 1; overflow-y: auto; padding: 20px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .chat-bubble {
+      max-width: 74%;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 300;
+      line-height: 1.55;
+    }
+    .chat-bubble.left  { background: var(--color-surface-elevated); border: 1px solid var(--color-hairline); align-self: flex-start; }
+    .chat-bubble.right { background: rgba(28,105,212,0.18); border: 1px solid var(--color-accent); align-self: flex-end; }
+    .chips-row {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      padding: 10px 20px;
+      border-top: 1px solid var(--color-hairline);
+    }
+    .chip {
+      padding: 5px 12px;
+      border: 1px solid var(--color-hairline);
+      background: var(--color-surface-elevated);
+      color: var(--color-body);
+      font-family: var(--font-family);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color 0.12s, color 0.12s;
+    }
+    .chip:hover { border-color: var(--color-accent); color: var(--color-text); }
+    .ask-input-row {
+      display: flex; gap: 8px; padding: 10px 14px;
+      border-top: 1px solid var(--color-hairline);
+      align-items: center;
+    }
+    #ask-input {
+      flex: 1;
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-hairline);
+      color: var(--color-text);
+      font-family: var(--font-family);
+      font-size: 13px;
+      font-weight: 300;
+      padding: 8px 12px;
+      height: 40px;
+      outline: none;
+    }
+    #ask-input:focus { border-color: var(--color-accent); }
+    #ask-input::placeholder { color: var(--color-text-muted); }
+
+    /* ── TYPING INDICATOR ── */
+    .typing {
+      display: flex; gap: 4px;
+      padding: 12px 14px;
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-hairline);
+      align-self: flex-start; width: fit-content;
+    }
+    .dot { width: 6px; height: 6px; background: var(--color-body); border-radius: 50%; animation: blink 1.2s infinite; }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink {
+      0%,60%,100% { opacity: 0.3; transform: translateY(0); }
+      30% { opacity: 1; transform: translateY(-4px); }
+    }
+
+    /* ── MODAL ── */
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.82);
+      z-index: 200; align-items: center; justify-content: center;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      background: var(--color-surface);
+      border: 1px solid var(--color-hairline);
+      width: 560px;
+      max-height: 88vh;
+      display: flex; flex-direction: column;
+      overflow: hidden; position: relative;
+    }
+    .modal-hdr {
+      padding: 20px 24px 14px;
+      border-bottom: 1px solid var(--color-hairline);
+      flex-shrink: 0;
+    }
+    .modal-powered {
+      float: right;
+      font-size: 9px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--color-accent); margin-top: 3px;
+    }
+    .modal-title    { font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--color-text); margin-bottom: 4px; }
+    .modal-subtitle { font-size: 12px; font-weight: 300; color: var(--color-body); }
+    .modal-close {
+      position: absolute; top: 16px; right: 16px;
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      background: none; border: none;
+      color: var(--color-text-muted); font-size: 16px; cursor: pointer;
+    }
+    .modal-close:hover { background: var(--color-surface-elevated); color: var(--color-text); }
+    .modal-body { flex: 1; overflow-y: auto; min-height: 0; }
+    .modal-ftr { padding: 14px 24px; border-top: 1px solid var(--color-hairline); flex-shrink: 0; }
+
+    /* Intake chat */
+    #intake-msgs {
+      padding: 16px 24px;
+      display: flex; flex-direction: column; gap: 11px;
+      flex: 1; overflow-y: auto; min-height: 0;
+    }
+    .int-bubble {
+      max-width: 82%; padding: 10px 14px;
+      font-size: 13px; font-weight: 300; line-height: 1.55;
+    }
+    .int-bubble.left  { background: var(--color-surface-elevated); border: 1px solid var(--color-hairline); align-self: flex-start; }
+    .int-bubble.right { background: rgba(28,105,212,0.18); border: 1px solid var(--color-accent); align-self: flex-end; }
+    #intake-send-row {
+      display: flex; gap: 8px; padding: 10px 24px 14px;
+      border-top: 1px solid var(--color-hairline);
+      align-items: flex-end;
+    }
+    #intake-input {
+      flex: 1;
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-hairline);
+      color: var(--color-text);
+      font-family: var(--font-family);
+      font-size: 13px; font-weight: 300;
+      padding: 9px 12px; resize: none; outline: none;
+      min-height: 40px; max-height: 90px;
+    }
+    #intake-input:focus { border-color: var(--color-accent); }
+    #intake-input::placeholder { color: var(--color-text-muted); }
+
+    /* Brief ready */
+    #brief-body { padding: 20px 24px; }
+    .brief-check {
+      display: flex; align-items: center; gap: 9px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--color-status-green); margin-bottom: 16px;
+    }
+    .brief-summary {
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-hairline);
+      padding: 13px 15px; margin-bottom: 14px; font-size: 13px;
+    }
+    .brief-row { display: grid; grid-template-columns: 105px 1fr; gap: 4px; margin-bottom: 7px; }
+    .brief-row:last-child { margin-bottom: 0; }
+    .brief-key { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--color-text-muted); padding-top: 1px; }
+    .brief-val { color: var(--color-body-strong); font-weight: 300; }
+    .brief-list { list-style: none; }
+    .brief-list li::before { content: '— '; color: var(--color-text-muted); }
+
+    .pricing-box {
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-hairline);
+      padding: 13px 15px; margin-bottom: 14px;
+    }
+    .pricing-box-label {
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--color-text-muted); margin-bottom: 10px;
+    }
+    .pricing-selects { display: flex; gap: 8px; margin-bottom: 10px; }
+    .pricing-selects select {
+      flex: 1;
+      background: var(--color-surface);
+      border: 1px solid var(--color-hairline);
+      color: var(--color-text);
+      font-family: var(--font-family);
+      font-size: 12px; font-weight: 300;
+      padding: 7px 10px; outline: none; cursor: pointer;
+    }
+    .pricing-selects select:focus { border-color: var(--color-accent); }
+    .pricing-range { font-size: 14px; font-weight: 700; color: var(--color-accent); margin-bottom: 5px; font-variant-numeric: tabular-nums; }
+    .pricing-ai-rec { font-size: 12px; font-style: italic; font-weight: 300; color: var(--color-text-muted); margin-bottom: 10px; }
+    .fee-row { display: flex; align-items: center; gap: 10px; }
+    .fee-row label { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--color-text-muted); white-space: nowrap; text-transform: uppercase; }
+    .fee-row input {
+      width: 100px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-hairline);
+      color: var(--color-text);
+      font-family: var(--font-family);
+      font-size: 14px; font-weight: 700;
+      padding: 7px 10px; outline: none;
+    }
+    .fee-row input:focus { border-color: var(--color-accent); }
+
+    /* Proposal modal */
+    .prop-field-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    .prop-field { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .prop-field label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--color-text-muted); }
+    .prop-field input, .prop-field textarea {
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-hairline);
+      color: var(--color-text);
+      font-family: var(--font-family);
+      font-size: 13px; font-weight: 300;
+      padding: 8px 10px; outline: none; resize: vertical;
+    }
+    .prop-field input:focus, .prop-field textarea:focus { border-color: var(--color-accent); }
+    .prop-actions { display: flex; gap: 8px; padding: 14px 24px; border-top: 1px solid var(--color-hairline); flex-shrink: 0; }
+    .prop-actions .btn { flex: 1; justify-content: center; }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--color-text); color: var(--color-canvas);
+      padding: 10px 20px;
+      font-family: var(--font-family);
+      font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+      transition: transform 0.25s ease; z-index: 999; pointer-events: none;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* Misc */
+    .empty-state { font-size: 12px; font-weight: 300; font-style: italic; color: var(--color-text-muted); padding: 16px 0; text-align: center; }
+    .loading-row { font-size: 13px; font-weight: 300; color: var(--color-text-muted); padding: 24px; text-align: center; }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--color-hairline); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+
+    select option { background: var(--color-surface-elevated); color: var(--color-text); }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<aside id="sidebar">
+  <div id="sidebar-logo">
+    <div class="wordmark">Meridian</div>
+    <div class="submark">Engagement OS</div>
+    <div class="m-stripe"></div>
+  </div>
+
+  <nav id="sidebar-nav">
+    <button class="nav-item active" data-tab="pipeline">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="1.5" y="4" width="3" height="8" rx="0"/><rect x="6.5" y="2" width="3" height="10" rx="0"/><rect x="11.5" y="6" width="3" height="6" rx="0"/>
+      </svg>
+      Pipeline
+    </button>
+    <button class="nav-item" data-tab="projects">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="1" y="1" width="6" height="6" rx="0"/><rect x="9" y="1" width="6" height="6" rx="0"/><rect x="1" y="9" width="6" height="6" rx="0"/><rect x="9" y="9" width="6" height="6" rx="0"/>
+      </svg>
+      Projects
+    </button>
+    <button class="nav-item" data-tab="clients">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="6" cy="5" r="2.5"/><path d="M1 14c0-2.8 2.2-5 5-5s5 2.2 5 5"/><path d="M12 7c.9 0 1.5.6 1.5 1.5S12.9 10 12 10"/><path d="M12 10c1.9 0 3.5 1.6 3.5 3.5" stroke-linecap="round"/>
+      </svg>
+      Clients
+    </button>
+    <button class="nav-item" data-tab="reports">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="1.5" y="1.5" width="13" height="13" rx="0"/><path d="M5 11V8M8 11V5M11 11V9"/>
+      </svg>
+      Reports
+    </button>
+    <button class="nav-item" data-tab="ask">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M14 10a2 2 0 01-2 2H5l-3 3V4a2 2 0 012-2h8a2 2 0 012 2v6z"/>
+      </svg>
+      Ask
+    </button>
+  </nav>
+
+  <div id="sidebar-footer">
+    <button class="btn btn-secondary btn-sm btn-block" id="run-agent-btn">⚡ Run Agent Now</button>
+  </div>
+</aside>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<main id="main">
+
+  <!-- TAB: PIPELINE -->
+  <div class="tab-pane active" id="tab-pipeline">
+    <div class="page-header">
+      <h1 class="page-title">Deal Pipeline</h1>
+      <button class="btn btn-primary" id="new-deal-btn">+ New Deal</button>
+    </div>
+    <div id="funnel-wrap"><canvas id="funnel-chart"></canvas></div>
+    <div class="kanban-board" id="kanban-board">
+      <div class="loading-row" style="grid-column:1/-1">Loading pipeline…</div>
+    </div>
+  </div>
+
+  <!-- TAB: PROJECTS -->
+  <div class="tab-pane" id="tab-projects">
+    <div class="page-header">
+      <h1 class="page-title">Active Projects</h1>
+    </div>
+    <div class="project-grid" id="project-grid">
+      <div class="loading-row" style="grid-column:1/-1">Loading projects…</div>
+    </div>
+    <div class="task-kanban" id="task-kanban">
+      <div class="loading-row" style="grid-column:1/-1;color:var(--color-text-muted)">Select a project above to view tasks.</div>
+    </div>
+  </div>
+
+  <!-- TAB: CLIENTS -->
+  <div class="tab-pane" id="tab-clients">
+    <div class="page-header">
+      <h1 class="page-title">Clients</h1>
+    </div>
+    <div class="section-card">
+      <div style="padding:0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Client</th><th>Industry</th><th>Open Deals</th>
+              <th>Active Projects</th><th>Primary Contact</th><th>Website</th>
+            </tr>
+          </thead>
+          <tbody id="clients-tbody">
+            <tr><td colspan="6" class="loading-row">Loading clients…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: REPORTS -->
+  <div class="tab-pane" id="tab-reports">
+    <div class="page-header">
+      <h1 class="page-title">Reports</h1>
+    </div>
+    <div class="section-card">
+      <div class="section-card-header">Pipeline Summary</div>
+      <div class="section-card-body">
+        <div class="stat-grid" id="rpt-stats">
+          <div class="loading-row" style="grid-column:1/-1">Loading…</div>
+        </div>
+        <div class="chart-wrap"><canvas id="rpt-chart"></canvas></div>
+        <div class="attention-label" style="margin-top:20px">Needs Attention</div>
+        <table class="data-table">
+          <thead><tr><th>Client</th><th>Deal</th><th>Value</th><th>Days Since Activity</th></tr></thead>
+          <tbody id="stale-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-card-header">Project Health</div>
+      <div class="section-card-body">
+        <div id="ph-cards"></div>
+        <div class="attention-label" style="margin-top:20px">Overdue Tasks</div>
+        <table class="data-table">
+          <thead><tr><th>Task</th><th>Project</th><th>Assignee</th><th>Due Date</th></tr></thead>
+          <tbody id="overdue-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: ASK -->
+  <div class="tab-pane" id="tab-ask">
+    <div class="page-header">
+      <h1 class="page-title">Ask Anything</h1>
+    </div>
+    <div id="ask-wrap">
+      <div id="ask-messages">
+        <div class="chat-bubble left">Connecting to AI… Ask me anything about your pipeline, projects, or clients.</div>
+      </div>
+      <div class="chips-row">
+        <span class="chip" data-q="Which deals are stale?">Which deals are stale?</span>
+        <span class="chip" data-q="What needs attention this week?">What needs attention this week?</span>
+        <span class="chip" data-q="Summarize the Tata Motors situation">Summarize the Tata Motors situation</span>
+        <span class="chip" data-q="Who is behind on tasks?">Who is behind on tasks?</span>
+      </div>
+      <div class="ask-input-row">
+        <input type="text" id="ask-input" placeholder="Ask about your pipeline, deals, or projects…">
+        <button class="btn btn-primary" id="ask-btn">Ask</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ═══════════════ PROPOSAL MODAL ═══════════════ -->
+<div class="overlay" id="proposal-overlay">
+  <div class="modal" style="width:600px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="prop-title"></div>
+      <button class="modal-close" id="prop-close">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px 24px 10px;overflow-y:auto">
+      <div class="prop-field-row">
+        <div class="prop-field">
+          <label>Contact name</label>
+          <input type="text" id="prop-contact-name">
+        </div>
+        <div class="prop-field">
+          <label>Contact email</label>
+          <input type="email" id="prop-contact-email">
+        </div>
+      </div>
+      <div class="prop-field" style="margin-bottom:0">
+        <label>Client brief — edit before generating</label>
+        <textarea id="prop-brief" rows="10"></textarea>
+      </div>
+    </div>
+    <div class="prop-actions">
+      <button class="btn btn-primary" id="prop-send-email">Generate &amp; Send Email</button>
+      <button class="btn btn-secondary" id="prop-pdf-btn">Create PDF</button>
+      <button class="btn btn-secondary" id="prop-deck-btn">Create Deck</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ AGENT MODAL ═══════════════ -->
+<div class="overlay" id="agent-overlay">
+  <div class="modal" style="width:560px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="agent-modal-title">Morning Brief — sent to Telegram</div>
+      <button class="modal-close" id="agent-modal-close">✕</button>
+    </div>
+    <div class="modal-body" id="agent-modal-body" style="padding:20px 24px;font-size:14px;font-weight:300;line-height:1.7;white-space:pre-wrap"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ BRIEF VIEWER MODAL ═══════════════ -->
+<div class="overlay" id="brief-overlay">
+  <div class="modal" style="width:600px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="brief-modal-title"></div>
+      <div class="modal-subtitle" id="brief-modal-subtitle"></div>
+      <button class="modal-close" id="brief-modal-close">✕</button>
+    </div>
+    <div class="modal-body" id="brief-modal-body" style="padding:20px 24px;font-size:14px;font-weight:300;line-height:1.6"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ DEAL INTAKE MODAL ═══════════════ -->
+<div class="overlay" id="intake-overlay">
+  <div class="modal">
+    <div class="modal-hdr">
+      <span class="modal-powered">Powered by AI</span>
+      <div class="modal-title">New Deal — Brief Capture</div>
+      <div class="modal-subtitle">Tell us about the opportunity — we'll structure the brief</div>
+    </div>
+    <button class="modal-close" id="modal-close">✕</button>
+
+    <!-- State 1: Interview -->
+    <div id="intake-interview" class="modal-body" style="display:flex;flex-direction:column;overflow:hidden">
+      <div id="intake-msgs"></div>
+      <div id="intake-send-row">
+        <textarea id="intake-input" rows="2" placeholder="Type your response…"></textarea>
+        <button class="btn btn-primary" id="intake-send">Send</button>
+      </div>
+    </div>
+
+    <!-- State 2: Brief ready -->
+    <div id="brief-state" class="modal-body" style="display:none">
+      <div id="brief-body">
+        <div class="brief-check"><span style="font-size:18px">✓</span> Brief captured</div>
+        <div class="brief-summary" id="brief-summary"></div>
+        <div class="pricing-box">
+          <div class="pricing-box-label">Pricing</div>
+          <div class="pricing-selects">
+            <select id="p-type">
+              <option>Strategy Advisory</option>
+              <option>M&amp;A Due Diligence</option>
+              <option>Market Entry</option>
+              <option>Operational Improvement</option>
+              <option>Digital Transformation</option>
+              <option>Custom</option>
+            </select>
+            <select id="p-complexity">
+              <option value="standard">Standard</option>
+              <option value="complex">Complex</option>
+              <option value="highly_complex">Highly Complex</option>
+            </select>
+          </div>
+          <div class="pricing-range" id="p-range"></div>
+          <div class="pricing-ai-rec" id="p-ai-rec"></div>
+          <div class="fee-row">
+            <label>Fee (₹ Lakhs)</label>
+            <input type="number" id="p-fee" min="0" step="1">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-ftr" id="modal-ftr" style="display:none">
+      <button class="btn btn-primary btn-block" id="create-deal-btn">Create Deal</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCRIPT ═══════════════ -->
+<script>
+// ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
+window.DESIGN_TOKENS = {
+  primary:   '#ffffff',
+  accent:    '#1c69d4',
+  surface:   '#1a1a1a',
+  text:      '#ffffff',
+  textMuted: '#7e7e7e',
+  font:      'BMWTypeNextLatin, Inter, sans-serif'
+}
+
+// ─── PRICING RUBRIC ──────────────────────────────────────────────────────────
+window.PRICING_RUBRIC = {
+  'Strategy Advisory':       { standard: [12, 18], complex: [18, 28], highly_complex: [28, 45] },
+  'M&A Due Diligence':       { standard: [18, 28], complex: [28, 40], highly_complex: [40, 60] },
+  'Market Entry':            { standard: [14, 22], complex: [22, 35], highly_complex: [35, 50] },
+  'Operational Improvement': { standard: [10, 16], complex: [16, 25], highly_complex: [25, 40] },
+  'Digital Transformation':  { standard: [16, 24], complex: [24, 38], highly_complex: [38, 55] },
+  'Custom':                  { standard: [0,  0],  complex: [0,  0],  highly_complex: [0,  0]  },
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+const fmtL     = v => { const l = (v || 0) / 100000; return '₹' + (l % 1 === 0 ? l : l.toFixed(1)) + 'L' }
+const daysSince = d => Math.floor((Date.now() - new Date(d)) / 86400000)
+const daysUntil = d => Math.floor((new Date(d) - Date.now()) / 86400000)
+const todayStr  = () => new Date().toISOString().split('T')[0]
+const plus90    = () => { const d = new Date(); d.setDate(d.getDate() + 90); return d.toISOString().split('T')[0] }
+const fmtDate   = s => s ? new Date(s).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'
+
+function hexToRgb(hex) {
+  const h = hex.replace('#', '')
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)]
+}
+
+function mkTyping(container) {
+  const el = document.createElement('div')
+  el.className = 'typing'
+  el.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>'
+  container.appendChild(el)
+  container.scrollTop = container.scrollHeight
+  return el
+}
+
+function renderAnswer(text) {
+  let html = text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+
+  html = html.replace(/\[TABLE\]([\s\S]*?)\[\/TABLE\]/g, (_, csv) => {
+    const rows = csv.trim().split('\n').map(r => r.split(','))
+    const head = rows[0].map(h => `<th>${h.trim()}</th>`).join('')
+    const body = rows.slice(1).map(r => `<tr>${r.map(c => `<td>${c.trim()}</td>`).join('')}</tr>`).join('')
+    return `<div style="overflow-x:auto;margin:6px 0"><table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead style="background:var(--color-accent);color:#fff"><tr>${head}</tr></thead>
+      <tbody>${body}</tbody></table></div>`
+  })
+
+  html = html.replace(/\[CHART:bar\]([\s\S]*?)\[\/CHART:bar\]/g, (_, json) => {
+    const id = 'chart-' + Math.random().toString(36).slice(2)
+    try {
+      const d = JSON.parse(json)
+      setTimeout(() => {
+        const ctx = document.getElementById(id)
+        if (ctx) new Chart(ctx, {
+          type: 'bar',
+          data: { labels: d.labels, datasets: [{ data: d.values, backgroundColor: '#1c69d4' }] },
+          options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        })
+      }, 50)
+      return `<canvas id="${id}" style="max-height:180px;margin:6px 0"></canvas>`
+    } catch { return '' }
+  })
+
+  html = html.replace(/\n/g, '<br>')
+  return html
+}
+
+function mkBubble(container, text, side, cssClass = 'chat-bubble', rich = false) {
+  const el = document.createElement('div')
+  el.className = `${cssClass} ${side}`
+  if (rich) el.innerHTML = renderAnswer(text)
+  else el.textContent = text
+  container.appendChild(el)
+  container.scrollTop = container.scrollHeight
+  return el
+}
+
+// ─── TAB NAVIGATION ──────────────────────────────────────────────────────────
+let _tabsLoaded = { pipeline: false, projects: false, clients: false, reports: false, ask: false }
+
+function switchTab(name) {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.tab === name))
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name))
+  if (!_tabsLoaded[name]) {
+    _tabsLoaded[name] = true
+    if (name === 'projects') loadProjects()
+    if (name === 'clients')  loadClients()
+    if (name === 'reports')  loadReports()
+  }
+}
+
+document.querySelectorAll('.nav-item').forEach(btn =>
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab))
+)
+
+// ─── BRIEF VIEWER ────────────────────────────────────────────────────────────
+function viewBrief(deal) {
+  document.getElementById('brief-modal-title').textContent = deal.title
+  document.getElementById('brief-modal-subtitle').textContent =
+    (clientName(deal.client_id) || '') + ' · ' + (deal.stage || '').replace(/_/g, ' ')
+  const body = document.getElementById('brief-modal-body')
+  body.innerHTML = deal.description
+    ? renderAnswer(deal.description)
+    : '<p style="color:var(--color-text-muted)">No brief captured for this deal.</p>'
+  document.getElementById('brief-overlay').classList.add('open')
+}
+document.getElementById('brief-modal-close').addEventListener('click', () =>
+  document.getElementById('brief-overlay').classList.remove('open')
+)
+document.getElementById('brief-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('brief-overlay'))
+    document.getElementById('brief-overlay').classList.remove('open')
+})
+
+// ─── BOOT ────────────────────────────────────────────────────────────────────
+async function boot() {
+  const { supabaseUrl, supabaseAnonKey } = await fetch('/api/config').then(r => r.json())
+  window._sb = window.supabase.createClient(supabaseUrl, supabaseAnonKey)
+
+  _tabsLoaded.pipeline = true
+  await loadPipeline()
+
+  document.getElementById('new-deal-btn').addEventListener('click', openModal)
+  document.getElementById('modal-close').addEventListener('click', closeModal)
+  document.getElementById('intake-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('intake-overlay')) closeModal()
+  })
+  document.getElementById('run-agent-btn').addEventListener('click', runAgent)
+  wireAsk()
+}
+
+// ─── PIPELINE ────────────────────────────────────────────────────────────────
+let _deals = [], _clients = []
+
+async function loadPipeline() {
+  const [{ data: deals }, { data: clients }] = await Promise.all([
+    window._sb.from('deals').select('*').order('created_at', { ascending: false }),
+    window._sb.from('clients').select('id, name')
+  ])
+  _deals   = deals   || []
+  _clients = clients || []
+  renderPipeline()
+}
+
+function clientName(id) {
+  return (_clients.find(c => c.id === id) || {}).name || '—'
+}
+
+function renderPipeline() {
+  renderFunnel()
+  const stages = [
+    { key: 'prospect',      label: 'Prospect' },
+    { key: 'proposal_sent', label: 'Proposal Sent' },
+    { key: 'won',           label: 'Won' },
+    { key: 'lost',          label: 'Lost' },
+  ]
+  const board = document.getElementById('kanban-board')
+  board.innerHTML = ''
+  stages.forEach(({ key, label }) => {
+    const deals = _deals.filter(d => d.stage === key)
+    const col = document.createElement('div')
+    col.className = 'kanban-col'
+    col.innerHTML = `
+      <div class="kanban-col-hdr">
+        <span class="kanban-col-title">${label}</span>
+        <span class="col-count">${deals.length}</span>
+      </div>
+      <div id="col-${key}"></div>
+    `
+    board.appendChild(col)
+    const wrap = col.querySelector(`#col-${key}`)
+    deals.forEach(d => wrap.appendChild(buildDealCard(d)))
+  })
+}
+
+function buildDealCard(deal) {
+  const card = document.createElement('div')
+  card.className = 'deal-card'
+  const days   = daysSince(deal.last_activity_at)
+  const isStale = deal.stage === 'proposal_sent' && days > 7
+  const briefBtn = deal.description
+    ? `<button class="btn btn-xs btn-ghost" data-action="brief">View Brief</button>` : ''
+
+  let actions = ''
+  if (deal.stage === 'prospect') {
+    actions = `
+      <button class="btn btn-xs btn-primary" data-action="won">Mark Won</button>
+      <button class="btn btn-xs btn-ghost"   data-action="lost">Mark Lost</button>
+      ${briefBtn}`
+  } else if (deal.stage === 'proposal_sent') {
+    actions = `
+      <button class="btn btn-xs btn-accent"   data-action="proposal">Send Proposal</button>
+      <button class="btn btn-xs btn-primary"  data-action="won">Mark Won</button>
+      <button class="btn btn-xs btn-ghost"    data-action="lost">Mark Lost</button>
+      ${briefBtn}`
+  }
+  // Won/Lost: no action buttons per spec
+
+  card.innerHTML = `
+    <div class="deal-client">${clientName(deal.client_id)}</div>
+    <div class="deal-title">${deal.title}</div>
+    <div class="deal-meta">
+      <span class="deal-value">${fmtL(deal.value_inr)}</span>
+      ${isStale
+        ? '<span class="badge badge-red">Stale</span>'
+        : `<span class="deal-days">${days}d ago</span>`}
+    </div>
+    ${actions ? `<div class="deal-actions">${actions}</div>` : ''}
+  `
+
+  card.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation()
+      const a = btn.dataset.action
+      if (a === 'won')           markWon(deal)
+      else if (a === 'lost')     markLost(deal)
+      else if (a === 'proposal') doSendProposal(deal.id)
+      else if (a === 'brief')    viewBrief(deal)
+    })
+  })
+  return card
+}
+
+async function markWon(deal) {
+  const sb  = window._sb
+  const now = new Date().toISOString()
+  await sb.from('deals').update({ stage: 'won', last_activity_at: now }).eq('id', deal.id)
+  await sb.from('projects').insert({
+    deal_id: deal.id, client_id: deal.client_id, title: deal.title,
+    status: 'active', start_date: todayStr(), end_date: plus90()
+  })
+  await sb.from('activity_log').insert({
+    entity_type: 'deal', entity_id: deal.id, action: 'deal_won', notes: 'Converted to project'
+  })
+  await loadPipeline()
+  _tabsLoaded.projects = false
+  switchTab('projects')
+}
+
+async function markLost(deal) {
+  await window._sb.from('deals').update({ stage: 'lost', last_activity_at: new Date().toISOString() }).eq('id', deal.id)
+  await loadPipeline()
+}
+
+// ─── FUNNEL CHART ────────────────────────────────────────────────────────────
+let _funnelChart = null
+function renderFunnel() {
+  const stages = ['prospect', 'proposal_sent', 'won', 'lost']
+  const labels = ['Prospect', 'Proposal Sent', 'Won', 'Lost']
+  const colors = ['#7e7e7e', '#f4b400', '#0fa336', '#e22718']
+  const counts = stages.map(s => _deals.filter(d => d.stage === s).length)
+  const values = stages.map(s =>
+    _deals.filter(d => d.stage === s).reduce((a, d) => a + (d.value_inr || 0), 0) / 100000
+  )
+  const ctx = document.getElementById('funnel-chart').getContext('2d')
+  if (_funnelChart) _funnelChart.destroy()
+  _funnelChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data: counts, backgroundColor: colors, borderWidth: 0, label: 'Deals' }] },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${c.raw} deals · ₹${values[c.dataIndex].toFixed(0)}L` } }
+      },
+      scales: {
+        x: { ticks: { color: '#7e7e7e', font: { size: 11 } }, grid: { color: '#3c3c3c' } },
+        y: { ticks: { color: '#bbbbbb', font: { size: 12 } }, grid: { display: false } }
+      }
+    }
+  })
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+function showToast(msg, duration = 3000) {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.classList.add('show')
+  setTimeout(() => t.classList.remove('show'), duration)
+}
+
+// ─── PROPOSAL MODAL ──────────────────────────────────────────────────────────
+let _propDeal = null, _lastProposal = null
+
+async function doSendProposal(dealId) {
+  const deal = _deals.find(d => d.id === dealId)
+  if (!deal) return
+  const sb = window._sb
+  const [{ data: contacts }, { data: priorLog }] = await Promise.all([
+    sb.from('contacts').select('name, email').eq('client_id', deal.client_id).limit(1),
+    sb.from('activity_log')
+      .select('notes').eq('entity_id', deal.id).eq('action', 'proposal_generated')
+      .order('created_at', { ascending: false }).limit(1)
+  ])
+  const contact = contacts?.[0] || {}
+  const prior   = priorLog?.[0] ? (() => { try { return JSON.parse(priorLog[0].notes) } catch { return null } })() : null
+
+  _propDeal     = deal
+  _lastProposal = prior
+
+  document.getElementById('prop-title').textContent = 'Proposal — ' + deal.title
+  document.getElementById('prop-contact-name').value  = contact.name  || ''
+  document.getElementById('prop-contact-email').value = contact.email || ''
+  document.getElementById('prop-brief').value         = deal.description || ''
+  document.getElementById('prop-pdf-btn').textContent  = prior ? 'Download PDF' : 'Create PDF'
+  document.getElementById('prop-deck-btn').textContent = 'Create Deck'
+  document.getElementById('prop-send-email').textContent = prior ? 'Resend Email' : 'Generate & Send Email'
+  document.getElementById('proposal-overlay').classList.add('open')
+}
+
+document.getElementById('prop-close').addEventListener('click', () =>
+  document.getElementById('proposal-overlay').classList.remove('open')
+)
+document.getElementById('proposal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('proposal-overlay'))
+    document.getElementById('proposal-overlay').classList.remove('open')
+})
+
+async function persistProposal() {
+  await window._sb.from('activity_log').insert({
+    entity_type: 'deal', entity_id: _propDeal.id,
+    action: 'proposal_generated', notes: JSON.stringify(_lastProposal)
+  })
+}
+
+async function generateProposal(sendEmail) {
+  const deal = _propDeal
+  if (!deal) return null
+  const r = await fetch('/api/proposal', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      dealTitle:    deal.title,
+      clientName:   clientName(deal.client_id),
+      contactName:  document.getElementById('prop-contact-name').value,
+      contactEmail: document.getElementById('prop-contact-email').value,
+      valueInr:     deal.value_inr,
+      brief:        document.getElementById('prop-brief').value,
+      sendEmail
+    })
+  })
+  return r.json()
+}
+
+document.getElementById('prop-send-email').addEventListener('click', async () => {
+  const btn = document.getElementById('prop-send-email')
+  btn.textContent = 'Sending…'; btn.disabled = true
+  try {
+    const d = await generateProposal(true)
+    if (d.success) {
+      _lastProposal = { subject: d.subject, body: d.body }
+      await persistProposal()
+      showToast('✓ Proposal emailed to ' + document.getElementById('prop-contact-email').value)
+      document.getElementById('prop-pdf-btn').textContent  = 'Create PDF'
+      document.getElementById('prop-deck-btn').textContent = 'Create Deck'
+      btn.textContent = 'Resend Email'
+    } else {
+      showToast('Error: ' + (d.error || 'Unknown error'))
+    }
+  } catch { showToast('Could not reach the proposal API.') }
+  btn.disabled = false
+})
+
+document.getElementById('prop-pdf-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('prop-pdf-btn')
+  if (btn.textContent === 'Download PDF') { generatePdf(); return }
+  btn.textContent = 'Building PDF…'; btn.disabled = true
+  if (!_lastProposal) {
+    const d = await generateProposal(false)
+    if (!d?.success) { showToast('Could not generate proposal.'); btn.textContent = 'Create PDF'; btn.disabled = false; return }
+    _lastProposal = { subject: d.subject, body: d.body }
+    await persistProposal()
+  }
+  setTimeout(() => { generatePdf(); btn.textContent = 'Download PDF'; btn.disabled = false }, 50)
+})
+
+function generatePdf() {
+  const cName = clientName(_propDeal.client_id)
+  const doc   = new jspdf.jsPDF('p', 'mm', 'a4')
+  doc.setFillColor(...hexToRgb(DESIGN_TOKENS.surface))
+  doc.rect(0, 0, 210, 297, 'F')
+  doc.setFillColor(...hexToRgb(DESIGN_TOKENS.primary))
+  doc.rect(0, 0, 210, 20, 'F')
+  doc.setTextColor(...hexToRgb(DESIGN_TOKENS.accent))
+  doc.setFontSize(12); doc.setFont('helvetica', 'bold')
+  doc.text('MERIDIAN ADVISORY', 10, 13)
+  doc.setDrawColor(...hexToRgb(DESIGN_TOKENS.accent))
+  doc.setLineWidth(0.5); doc.line(10, 22, 200, 22)
+  doc.setTextColor(...hexToRgb(DESIGN_TOKENS.text))
+  doc.setFontSize(14); doc.setFont('helvetica', 'bold')
+  doc.text(_lastProposal.subject, 10, 32)
+  doc.setTextColor(...hexToRgb(DESIGN_TOKENS.textMuted))
+  doc.setFontSize(11); doc.setFont('helvetica', 'normal')
+  const lines = doc.splitTextToSize(_lastProposal.body, 185)
+  doc.text(lines, 10, 42)
+  doc.setFontSize(8); doc.setTextColor(...hexToRgb(DESIGN_TOKENS.textMuted))
+  doc.text('Meridian Advisory | Confidential | ' + new Date().toLocaleDateString(), 10, 287)
+  doc.save(cName + '-proposal.pdf')
+}
+
+document.getElementById('prop-deck-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('prop-deck-btn')
+  if (btn.textContent === 'Download Deck' && btn.dataset.slides) {
+    await buildDeck(JSON.parse(btn.dataset.slides)); return
+  }
+  btn.textContent = 'Building Deck…'; btn.disabled = true
+  if (!_lastProposal) {
+    const d = await generateProposal(false)
+    if (!d?.success) { showToast('Could not generate proposal.'); btn.textContent = 'Create Deck'; btn.disabled = false; return }
+    _lastProposal = { subject: d.subject, body: d.body }
+    await persistProposal()
+  }
+  try {
+    const deal = _propDeal
+    const r = await fetch('/api/deck', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        dealTitle:    deal.title,
+        clientName:   clientName(deal.client_id),
+        contactName:  document.getElementById('prop-contact-name').value,
+        valueInr:     deal.value_inr,
+        proposalBody: _lastProposal.body
+      })
+    })
+    const d = await r.json()
+    if (d.success) {
+      btn.dataset.slides = JSON.stringify(d.slides)
+      await buildDeck(d.slides)
+      btn.textContent = 'Download Deck'
+    } else {
+      showToast('Deck error: ' + (d.error || 'Unknown'))
+      btn.textContent = 'Create Deck'
+    }
+  } catch (err) {
+    showToast('Deck failed: ' + err.message)
+    btn.textContent = 'Create Deck'
+  }
+  btn.disabled = false
+})
+
+async function buildDeck(slides) {
+  const strip = hex => hex.replace('#', '')
+  const pptx  = new PptxGenJS()
+  pptx.layout  = 'LAYOUT_WIDE'
+  slides.forEach(slide => {
+    const s = pptx.addSlide()
+    if (slide.type === 'title') {
+      s.background = { color: '000000' }
+      s.addText(slide.title    || '', { x:0.5, y:1.5, w:12, h:1.5, fontSize:36, bold:true, color: strip(DESIGN_TOKENS.accent) })
+      s.addText(slide.subtitle || '', { x:0.5, y:3.2, w:12, h:0.8, fontSize:18, color:'ffffff' })
+      s.addText(slide.presenter|| '', { x:0.5, y:4.5, w:12, h:0.6, fontSize:14, color:'ffffff', italic:true })
+    } else {
+      s.background = { color: strip(DESIGN_TOKENS.surface) }
+      s.addShape(pptx.ShapeType.rect, { x:0, y:0, w:0.12, h:5.63, fill:{ color: strip(DESIGN_TOKENS.accent) } })
+      s.addText(slide.title || '', { x:0.3, y:0.3, w:12, h:0.7, fontSize:22, bold:true, color: strip(DESIGN_TOKENS.accent) })
+      const bulletText = (slide.bullets||[]).map(b => ({
+        text: String(b),
+        options: { bullet:{ color: strip(DESIGN_TOKENS.accent) }, color: 'bbbbbb', fontSize:14, paraSpaceAfter:6 }
+      }))
+      if (bulletText.length) s.addText(bulletText, { x:0.3, y:1.2, w:12.2, h:3.8 })
+      if (slide.closing) s.addText(slide.closing, { x:0.3, y:4.8, w:12, h:0.6, fontSize:12, italic:true, color: strip(DESIGN_TOKENS.textMuted) })
+      s.addText(String(slide.number), { x:12.2, y:5.1, w:0.5, h:0.4, fontSize:10, color: strip(DESIGN_TOKENS.textMuted), align:'right' })
+    }
+  })
+  await pptx.writeFile({ fileName: clientName(_propDeal.client_id) + '-proposal-deck.pptx' })
+  showToast('✓ Deck downloaded')
+}
+
+// ─── PROJECTS ────────────────────────────────────────────────────────────────
+let _projects = [], _tasks = [], _selProject = null
+
+async function loadProjects() {
+  const [{ data: projects }, { data: tasks }, { data: clients }] = await Promise.all([
+    window._sb.from('projects').select('*').eq('status', 'active').order('created_at'),
+    window._sb.from('tasks').select('*').order('due_date'),
+    window._sb.from('clients').select('id, name')
+  ])
+  _projects = projects || []
+  _tasks    = tasks    || []
+  if (!_clients.length) _clients = clients || []
+
+  renderProjectGrid()
+  if (_projects.length) {
+    _selProject = _projects[0].id
+    renderProjectGrid()
+    renderTaskKanban(_selProject)
+  }
+}
+
+function renderProjectGrid() {
+  const grid = document.getElementById('project-grid')
+  if (!_projects.length) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">No active projects.</div>'; return }
+  grid.innerHTML = ''
+  _projects.forEach(p => {
+    const ptasks = _tasks.filter(t => t.project_id === p.id)
+    const done   = ptasks.filter(t => t.status === 'done').length
+    const total  = ptasks.length
+    const pct    = total ? Math.round(done / total * 100) : 0
+    const dl     = daysUntil(p.end_date)
+    const card   = document.createElement('div')
+    card.className = 'project-card' + (p.id === _selProject ? ' active' : '')
+    card.innerHTML = `
+      <div class="pc-client">${clientName(p.client_id)}</div>
+      <div class="pc-title">${p.title}</div>
+      <div class="progress-wrap"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="pc-meta">
+        <span style="color:var(--color-text-muted)">${done} / ${total} tasks</span>
+        <span style="color:${dl < 0 ? 'var(--color-status-red)' : 'var(--color-text-muted)'}">
+          ${dl < 0 ? Math.abs(dl) + 'd overdue' : dl + 'd remaining'}
+        </span>
+      </div>
+    `
+    card.addEventListener('click', () => { _selProject = p.id; renderProjectGrid(); renderTaskKanban(p.id) })
+    grid.appendChild(card)
+  })
+}
+
+function renderTaskKanban(projId) {
+  const wrap  = document.getElementById('task-kanban')
+  const today = todayStr()
+  wrap.innerHTML = ''
+  const cols = [
+    { status: 'todo',        label: 'To Do' },
+    { status: 'in_progress', label: 'In Progress' },
+    { status: 'done',        label: 'Done' },
+  ]
+  cols.forEach(col => {
+    const tasks = _tasks.filter(t => t.project_id === projId && t.status === col.status)
+    const colEl = document.createElement('div')
+    colEl.className = 'task-col'
+    colEl.innerHTML = `
+      <div class="kanban-col-hdr">
+        <span class="kanban-col-title">${col.label}</span>
+        <span class="col-count">${tasks.length}</span>
+      </div>
+      <div id="tc-${col.status}"></div>
+      ${col.status === 'todo' ? `
+        <button class="btn btn-ghost btn-xs" id="add-task-toggle" style="margin-top:8px;width:100%">+ Add Task</button>
+        <div id="add-task-wrap"></div>
+      ` : ''}
+    `
+    wrap.appendChild(colEl)
+    const c = colEl.querySelector(`#tc-${col.status}`)
+    tasks.forEach(t => c.appendChild(buildTaskCard(t, today)))
+    if (col.status === 'todo') {
+      colEl.querySelector('#add-task-toggle').addEventListener('click', () => toggleAddTask(projId))
+    }
+  })
+}
+
+function buildTaskCard(task, today) {
+  const isOverdue = task.status !== 'done' && task.due_date && task.due_date < today
+  const card = document.createElement('div')
+  card.className = 'task-card' + (isOverdue ? ' overdue' : '')
+  card.innerHTML = `
+    <button class="task-delete" title="Delete task">✕</button>
+    <div class="task-title">${task.title}</div>
+    <div class="task-meta">
+      <span>${task.assignee || '—'}</span>
+      <span class="${isOverdue ? 'overdue-date' : ''}">${fmtDate(task.due_date)}</span>
+    </div>
+  `
+  card.addEventListener('click', () => cycleTask(task))
+  card.querySelector('.task-delete').addEventListener('click', e => { e.stopPropagation(); deleteTask(task) })
+  return card
+}
+
+async function deleteTask(task) {
+  await window._sb.from('tasks').delete().eq('id', task.id)
+  _tasks = _tasks.filter(t => t.id !== task.id)
+  renderProjectGrid(); renderTaskKanban(_selProject)
+}
+
+async function cycleTask(task) {
+  const next      = { todo: 'in_progress', in_progress: 'done', done: 'todo' }
+  const newStatus = next[task.status]
+  await window._sb.from('tasks').update({ status: newStatus }).eq('id', task.id)
+  const idx = _tasks.findIndex(t => t.id === task.id)
+  if (idx >= 0) _tasks[idx].status = newStatus
+  renderProjectGrid(); renderTaskKanban(_selProject)
+}
+
+function toggleAddTask(projId) {
+  const wrap = document.getElementById('add-task-wrap')
+  if (wrap.innerHTML) { wrap.innerHTML = ''; return }
+  const assignees = [...new Set(_tasks.map(t => t.assignee).filter(Boolean))].sort()
+  const assigneeOptions = assignees.map(a => `<option value="${a}">${a}</option>`).join('')
+  wrap.innerHTML = `
+    <div class="add-task-form">
+      <input type="text"  id="at-title"    placeholder="Task title">
+      <select id="at-assignee">
+        <option value="">— Assignee —</option>
+        ${assigneeOptions}
+      </select>
+      <input type="date"  id="at-due">
+      <div class="add-task-form-actions">
+        <button class="btn btn-primary btn-xs" id="at-save">Add</button>
+        <button class="btn btn-ghost btn-xs"   id="at-cancel">Cancel</button>
+      </div>
+    </div>
+  `
+  document.getElementById('at-cancel').addEventListener('click', () => { wrap.innerHTML = '' })
+  document.getElementById('at-save').addEventListener('click', async () => {
+    const title = document.getElementById('at-title').value.trim()
+    if (!title) return
+    const assignee = document.getElementById('at-assignee').value || null
+    const due_date = document.getElementById('at-due').value     || null
+    const { data } = await window._sb.from('tasks').insert({
+      project_id: projId, title, assignee, due_date, status: 'todo'
+    }).select().single()
+    if (data) { _tasks.push(data); wrap.innerHTML = ''; renderProjectGrid(); renderTaskKanban(_selProject) }
+  })
+}
+
+// ─── CLIENTS ─────────────────────────────────────────────────────────────────
+async function loadClients() {
+  const [{ data: clients }, { data: contacts }, { data: deals }, { data: projects }] = await Promise.all([
+    window._sb.from('clients').select('*').order('name'),
+    window._sb.from('contacts').select('*'),
+    window._sb.from('deals').select('client_id, stage'),
+    window._sb.from('projects').select('client_id, status')
+  ])
+  const tbody = document.getElementById('clients-tbody')
+  tbody.innerHTML = ''
+  if (!clients?.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No clients yet.</td></tr>'; return
+  }
+  clients.forEach(c => {
+    const open   = (deals    || []).filter(d => d.client_id === c.id && ['prospect','proposal_sent'].includes(d.stage)).length
+    const active = (projects || []).filter(p => p.client_id === c.id && p.status === 'active').length
+    const contact = (contacts || []).find(ct => ct.client_id === c.id)
+    const tr = document.createElement('tr')
+    tr.innerHTML = `
+      <td style="font-weight:700">${c.name}</td>
+      <td style="color:var(--color-text-muted)">${c.industry || '—'}</td>
+      <td class="mono">${open}</td>
+      <td class="mono">${active}</td>
+      <td style="color:var(--color-body)">${contact?.name || '—'}</td>
+      <td>${c.website
+        ? `<a href="https://${c.website}" target="_blank" style="color:var(--color-accent);font-size:12px;text-decoration:none">${c.website}</a>`
+        : '—'}</td>
+    `
+    tr.addEventListener('click', () => {
+      tbody.querySelectorAll('tr').forEach(r => r.classList.remove('selected'))
+      tr.classList.add('selected')
+    })
+    tbody.appendChild(tr)
+  })
+}
+
+// ─── REPORTS ─────────────────────────────────────────────────────────────────
+let _rptChart = null
+
+async function loadReports() {
+  const [{ data: deals }, { data: projects }, { data: tasks }, { data: clients }] = await Promise.all([
+    window._sb.from('deals').select('*'),
+    window._sb.from('projects').select('*').eq('status', 'active'),
+    window._sb.from('tasks').select('*'),
+    window._sb.from('clients').select('id, name')
+  ])
+  if (!_clients.length) _clients = clients || []
+  const today = todayStr()
+  const all   = deals    || []
+  const projs = projects || []
+  const tks   = tasks    || []
+
+  const stale = all.filter(d => d.stage === 'proposal_sent' && daysSince(d.last_activity_at) >= 7)
+  const pipe  = all.filter(d => ['prospect','proposal_sent'].includes(d.stage))
+                   .reduce((a, d) => a + (d.value_inr || 0), 0)
+
+  // Stat cards
+  document.getElementById('rpt-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total Deals</div>
+      <div class="stat-value">${all.length}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Active Pipeline</div>
+      <div class="stat-value accent">${fmtL(pipe)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Proposals Out</div>
+      <div class="stat-value primary">${all.filter(d => d.stage === 'proposal_sent').length}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Stale</div>
+      <div class="stat-value${stale.length > 0 ? ' red' : ''}">${stale.length}</div>
+    </div>
+  `
+
+  // Pipeline chart
+  const stages  = ['prospect','proposal_sent','won','lost']
+  const sLabels = ['Prospect','Proposal Sent','Won','Lost']
+  const sColors = ['#7e7e7e','#f4b400','#0fa336','#e22718']
+  const sVals   = stages.map(s => all.filter(d => d.stage === s).reduce((a, d) => a + (d.value_inr || 0), 0) / 100000)
+
+  const ctx = document.getElementById('rpt-chart').getContext('2d')
+  if (_rptChart) _rptChart.destroy()
+  _rptChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: sLabels, datasets: [{ data: sVals, backgroundColor: sColors, borderWidth: 0, label: '₹L' }] },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ₹${c.raw.toFixed(0)}L` } }
+      },
+      scales: {
+        x: { ticks: { color: '#7e7e7e', font: { size: 11 }, callback: v => '₹' + v + 'L' }, grid: { color: '#3c3c3c' } },
+        y: { ticks: { color: '#bbbbbb', font: { size: 12 } }, grid: { display: false } }
+      }
+    }
+  })
+
+  // Stale table
+  const staleTbody = document.getElementById('stale-tbody')
+  const sorted     = [...stale].sort((a,b) => daysSince(b.last_activity_at) - daysSince(a.last_activity_at))
+  staleTbody.innerHTML = sorted.length
+    ? sorted.map(d => `
+        <tr class="stale-row">
+          <td>${clientName(d.client_id)}</td>
+          <td>${d.title}</td>
+          <td class="mono">${fmtL(d.value_inr)}</td>
+          <td class="mono" style="color:var(--color-status-amber)">${daysSince(d.last_activity_at)}d</td>
+        </tr>`).join('')
+    : '<tr><td colspan="4" class="empty-state">No stale proposals — pipeline is healthy</td></tr>'
+
+  // Project health cards
+  const phEl = document.getElementById('ph-cards')
+  phEl.innerHTML = ''
+  if (!projs.length) {
+    phEl.innerHTML = '<div class="empty-state">No active projects.</div>'
+  }
+  projs.forEach(p => {
+    const pt    = tks.filter(t => t.project_id === p.id)
+    const done  = pt.filter(t => t.status === 'done').length
+    const total = pt.length
+    const od    = pt.filter(t => t.status !== 'done' && t.due_date && t.due_date < today).length
+    const pct   = total ? Math.round(done / total * 100) : 0
+    const dl    = daysUntil(p.end_date)
+    const urgent = dl < 14
+    const div   = document.createElement('div')
+    div.className = 'ph-card'
+    div.innerHTML = `
+      <div class="ph-client">${clientName(p.client_id)}</div>
+      <div class="ph-title">${p.title}</div>
+      <div class="progress-wrap" style="margin-top:8px"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="ph-meta">
+        <span style="color:var(--color-text-muted)">${done} of ${total} tasks done</span>
+        <span>
+          ${od > 0 ? `<span style="color:var(--color-status-red);font-weight:700;margin-right:12px">${od} overdue</span>` : ''}
+          <span style="color:${urgent ? 'var(--color-status-red)' : 'var(--color-text-muted)'}${urgent ? ';font-weight:700' : ''}">
+            ${dl < 0 ? Math.abs(dl) + 'd past due' : dl + 'd remaining'}
+          </span>
+        </span>
+      </div>
+    `
+    phEl.appendChild(div)
+  })
+
+  // Overdue tasks
+  const odTasks  = tks.filter(t => t.status !== 'done' && t.due_date && t.due_date < today)
+  const odTbody  = document.getElementById('overdue-tbody')
+  odTbody.innerHTML = odTasks.length
+    ? odTasks.map(t => {
+        const proj = projs.find(p => p.id === t.project_id)
+        return `<tr class="overdue-row">
+          <td>${t.title}</td>
+          <td style="color:var(--color-body)">${proj?.title || '—'}</td>
+          <td style="color:var(--color-body)">${t.assignee || '—'}</td>
+          <td class="mono" style="color:var(--color-status-red)">${fmtDate(t.due_date)}</td>
+        </tr>`
+      }).join('')
+    : '<tr><td colspan="4" class="empty-state">No overdue tasks</td></tr>'
+}
+
+// ─── ASK TAB ─────────────────────────────────────────────────────────────────
+function wireAsk() {
+  const input    = document.getElementById('ask-input')
+  const btn      = document.getElementById('ask-btn')
+  const messages = document.getElementById('ask-messages')
+
+  async function submit() {
+    const q = input.value.trim()
+    if (!q) return
+    mkBubble(messages, q, 'right')
+    input.value = ''
+    const t = mkTyping(messages)
+    try {
+      const r = await fetch('/api/chat', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: q })
+      })
+      t.remove()
+      if (r.ok) {
+        const d = await r.json()
+        mkBubble(messages, d.answer || d.response || JSON.stringify(d), 'left', 'chat-bubble', true)
+      } else {
+        mkBubble(messages, 'Could not reach the AI. This will work after deploying to Vercel.', 'left')
+      }
+    } catch {
+      t.remove()
+      mkBubble(messages, 'Could not reach the AI. This will work after deploying to Vercel.', 'left')
+    }
+  }
+
+  btn.addEventListener('click', submit)
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submit() } })
+  document.querySelectorAll('.chip').forEach(chip =>
+    chip.addEventListener('click', () => { input.value = chip.dataset.q; submit() })
+  )
+}
+
+// ─── RUN AGENT ───────────────────────────────────────────────────────────────
+function showAgentModal(title, body) {
+  document.getElementById('agent-modal-title').textContent = title
+  document.getElementById('agent-modal-body').textContent  = body
+  document.getElementById('agent-overlay').classList.add('open')
+}
+document.getElementById('agent-modal-close').addEventListener('click', () =>
+  document.getElementById('agent-overlay').classList.remove('open')
+)
+document.getElementById('agent-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('agent-overlay'))
+    document.getElementById('agent-overlay').classList.remove('open')
+})
+
+async function runAgent() {
+  const btn = document.getElementById('run-agent-btn')
+  btn.textContent = 'Running…'; btn.disabled = true
+  try {
+    const r = await fetch('/api/agent', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    })
+    const d = await r.json()
+    if (d.success) showAgentModal('Morning Brief — sent to Telegram', d.brief)
+    else showAgentModal('Agent Error', d.error || 'Unknown error')
+  } catch {
+    showAgentModal('Agent Error', 'Agent could not run. This works after deploying to Vercel.')
+  }
+  btn.textContent = '⚡ Run Agent Now'; btn.disabled = false
+}
+
+// ─── INTAKE MODAL ────────────────────────────────────────────────────────────
+let _intakeMsgs = [], _brief = null
+
+function openModal() {
+  _intakeMsgs = []; _brief = null
+  document.getElementById('intake-msgs').innerHTML = ''
+  document.getElementById('intake-input').value    = ''
+  document.getElementById('intake-interview').style.display = 'flex'
+  document.getElementById('brief-state').style.display     = 'none'
+  document.getElementById('modal-ftr').style.display       = 'none'
+  document.getElementById('intake-overlay').classList.add('open')
+  startIntake()
+}
+
+function closeModal() {
+  document.getElementById('intake-overlay').classList.remove('open')
+}
+
+async function startIntake() {
+  const msgs = document.getElementById('intake-msgs')
+  const t    = mkTyping(msgs)
+  try {
+    const r = await fetch('/api/intake', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [] })
+    })
+    t.remove()
+    const d   = await r.json()
+    const txt = d.message || d.response || "Tell me about the opportunity — what's the client and what problem are we solving?"
+    mkBubble(msgs, txt, 'left', 'int-bubble', true)
+    _intakeMsgs.push({ role: 'assistant', content: txt })
+  } catch {
+    t.remove()
+    const txt = "Tell me about the opportunity — what's the client and what problem are we solving?"
+    mkBubble(msgs, txt, 'left', 'int-bubble', true)
+    _intakeMsgs.push({ role: 'assistant', content: txt })
+  }
+  wireIntakeSend()
+}
+
+function wireIntakeSend() {
+  const oldSend  = document.getElementById('intake-send')
+  const newSend  = oldSend.cloneNode(true)
+  oldSend.parentNode.replaceChild(newSend, oldSend)
+
+  const oldInput = document.getElementById('intake-input')
+  const newInput = oldInput.cloneNode(true)
+  oldInput.parentNode.replaceChild(newInput, oldInput)
+
+  async function doSend() {
+    const text = newInput.value.trim()
+    if (!text) return
+    newInput.value = ''
+    const msgs = document.getElementById('intake-msgs')
+    mkBubble(msgs, text, 'right', 'int-bubble')
+    _intakeMsgs.push({ role: 'user', content: text })
+    const t = mkTyping(msgs)
+    try {
+      const r = await fetch('/api/intake', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: _intakeMsgs })
+      })
+      t.remove()
+      const d = await r.json()
+      if (d.ready) {
+        _brief = d.brief
+        mkBubble(msgs, d.message || 'Brief is ready — reviewing now.', 'left', 'int-bubble', true)
+        setTimeout(showBriefState, 800)
+      } else {
+        const txt = d.message || d.response || '...'
+        mkBubble(msgs, txt, 'left', 'int-bubble', true)
+        _intakeMsgs.push({ role: 'assistant', content: txt })
+      }
+    } catch {
+      t.remove()
+      mkBubble(msgs, 'Could not reach intake API.', 'left', 'int-bubble')
+    }
+  }
+
+  newSend.addEventListener('click', doSend)
+  newInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend() } })
+}
+
+function showBriefState() {
+  document.getElementById('intake-interview').style.display = 'none'
+  document.getElementById('brief-state').style.display      = 'block'
+  document.getElementById('modal-ftr').style.display        = 'block'
+
+  const b      = _brief || {}
+  const delivs = Array.isArray(b.deliverables)
+    ? b.deliverables.map(d => `<li>${d}</li>`).join('')
+    : `<li>${b.deliverables || '—'}</li>`
+
+  document.getElementById('brief-summary').innerHTML = `
+    <div class="brief-row">
+      <span class="brief-key">Client</span>
+      <span class="brief-val">${b.clientName || '—'}</span>
+    </div>
+    <div class="brief-row">
+      <span class="brief-key">Contact</span>
+      <span class="brief-val">${b.contactName || '—'}${b.contactEmail ? ` (${b.contactEmail})` : ''}</span>
+    </div>
+    <div class="brief-row">
+      <span class="brief-key">Deliverables</span>
+      <span class="brief-val"><ul class="brief-list">${delivs}</ul></span>
+    </div>
+    <div class="brief-row">
+      <span class="brief-key">Timeline</span>
+      <span class="brief-val">${b.duration || '—'} | Stakeholders: ${b.stakeholders || '—'}</span>
+    </div>
+  `
+
+  const pType = document.getElementById('p-type')
+  const pComp = document.getElementById('p-complexity')
+  const pFee  = document.getElementById('p-fee')
+
+  const mapComp = c => {
+    if (!c) return 'standard'
+    const l = c.toLowerCase()
+    if (l.includes('high')) return 'highly_complex'
+    if (l.includes('complex')) return 'complex'
+    return 'standard'
+  }
+
+  Array.from(pType.options).forEach(o => { o.selected = o.text === (b.engagementType || '') })
+  Array.from(pComp.options).forEach(o => { o.selected = o.value === mapComp(b.complexity) })
+  pFee.value = b.recommendedFee || ''
+
+  document.getElementById('p-ai-rec').textContent =
+    b.recommendedFee && b.feeRationale ? `₹${b.recommendedFee}L — ${b.feeRationale}` : ''
+
+  updatePricingRange()
+
+  // Clone to remove old listeners
+  const newType = pType.cloneNode(true); pType.parentNode.replaceChild(newType, pType)
+  const newComp = pComp.cloneNode(true); pComp.parentNode.replaceChild(newComp, pComp)
+  newType.addEventListener('change', updatePricingRange)
+  newComp.addEventListener('change', updatePricingRange)
+
+  document.getElementById('create-deal-btn').onclick = createDeal
+}
+
+function updatePricingRange() {
+  const type   = document.getElementById('p-type').value
+  const comp   = document.getElementById('p-complexity').value
+  const rangeEl = document.getElementById('p-range')
+  if (type === 'Custom') { rangeEl.textContent = ''; return }
+  const r = (window.PRICING_RUBRIC[type] || {})[comp]
+  rangeEl.textContent = r ? `Suggested range: ₹${r[0]}L – ₹${r[1]}L` : ''
+}
+
+async function createDeal() {
+  const sb      = window._sb
+  const b       = _brief || {}
+  const feeVal  = parseFloat(document.getElementById('p-fee').value) || 0
+  const engType = document.getElementById('p-type').value
+  const complexity = document.getElementById('p-complexity').value
+
+  // 1. Match or insert client
+  const { data: existing } = await sb.from('clients').select('id, name')
+  const match = (existing || []).find(c => c.name.toLowerCase() === (b.clientName || '').toLowerCase())
+  let clientId
+  if (match) {
+    clientId = match.id
+  } else {
+    const { data: nc } = await sb.from('clients').insert({ name: b.clientName || 'New Client' }).select().single()
+    clientId = nc?.id
+    if (nc) _clients.push(nc)
+  }
+
+  // 2. Insert contact
+  if (b.contactName) {
+    await sb.from('contacts').insert({ client_id: clientId, name: b.contactName, email: b.contactEmail || null })
+  }
+
+  // 3. Build description
+  const delivList = Array.isArray(b.deliverables)
+    ? b.deliverables.map(d => `- ${d}`).join('\n')
+    : `- ${b.deliverables || ''}`
+  const desc = [
+    `**Problem:** ${b.problem || ''}`,
+    `**Why now:** ${b.whyNow || ''}`,
+    `**Deliverables:**`, delivList,
+    `**Out of scope:** ${b.outOfScope || 'Not discussed'}`,
+    `**Success looks like:** ${b.successLooks || ''}`,
+    `**Duration:** ${b.duration || ''} | **Stakeholders:** ${b.stakeholders || ''}`,
+    `**Engagement type:** ${engType} | **Complexity:** ${complexity}`,
+    `**Notes:** ${b.notes || ''}`
+  ].join('\n')
+
+  // 4. Insert deal
+  const { data: newDeal } = await sb.from('deals').insert({
+    client_id:        clientId,
+    title:            `${engType} — ${b.clientName || 'New Client'}`,
+    value_inr:        Math.round(feeVal * 100000),
+    stage:            'prospect',
+    description:      desc,
+    last_activity_at: new Date().toISOString()
+  }).select().single()
+
+  if (newDeal) {
+    _deals.unshift(newDeal)
+    await sb.from('activity_log').insert({
+      entity_type: 'deal', entity_id: newDeal.id,
+      action: 'deal_created',
+      notes: `New deal created via intake — ${engType} for ${b.clientName || 'New Client'} (₹${feeVal}L)`
+    })
+  }
+
+  closeModal()
+  renderPipeline()
+  switchTab('pipeline')
+}
+
+// ─── START ───────────────────────────────────────────────────────────────────
+boot()
+</script>
+</body>
+</html>
