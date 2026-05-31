@@ -1276,9 +1276,11 @@ async function doSendProposal(dealId) {
   document.getElementById('prop-contact-name').value  = contact.name  || ''
   document.getElementById('prop-contact-email').value = contact.email || ''
   document.getElementById('prop-brief').value         = deal.description || ''
-  document.getElementById('prop-pdf-btn').textContent  = prior ? 'Download PDF' : 'Create PDF'
+  document.getElementById('prop-pdf-btn').textContent  = prior ? 'Download PDF' : 'Download PDF'
+  document.getElementById('prop-pdf-btn').disabled     = !prior
   document.getElementById('prop-deck-btn').textContent = 'Create Deck'
-  document.getElementById('prop-send-email').textContent = prior ? 'Resend Email' : 'Generate & Send Email'
+  document.getElementById('prop-deck-btn').disabled    = !prior
+  document.getElementById('prop-send-email').textContent = prior ? 'Resend Email' : 'Send Email'
   document.getElementById('proposal-overlay').classList.add('open')
 }
 
@@ -1324,8 +1326,8 @@ document.getElementById('prop-send-email').addEventListener('click', async () =>
       _lastProposal = { subject: d.subject, body: d.body }
       await persistProposal()
       showToast('✓ Proposal emailed to ' + document.getElementById('prop-contact-email').value)
-      document.getElementById('prop-pdf-btn').textContent  = 'Create PDF'
-      document.getElementById('prop-deck-btn').textContent = 'Create Deck'
+      document.getElementById('prop-pdf-btn').disabled     = false
+      document.getElementById('prop-deck-btn').disabled    = false
       btn.textContent = 'Resend Email'
     } else {
       showToast('Error: ' + (d.error || 'Unknown error'))
@@ -1334,17 +1336,8 @@ document.getElementById('prop-send-email').addEventListener('click', async () =>
   btn.disabled = false
 })
 
-document.getElementById('prop-pdf-btn').addEventListener('click', async () => {
-  const btn = document.getElementById('prop-pdf-btn')
-  if (btn.textContent === 'Download PDF') { generatePdf(); return }
-  btn.textContent = 'Building PDF…'; btn.disabled = true
-  if (!_lastProposal) {
-    const d = await generateProposal(false)
-    if (!d?.success) { showToast('Could not generate proposal.'); btn.textContent = 'Create PDF'; btn.disabled = false; return }
-    _lastProposal = { subject: d.subject, body: d.body }
-    await persistProposal()
-  }
-  setTimeout(() => { generatePdf(); btn.textContent = 'Download PDF'; btn.disabled = false }, 50)
+document.getElementById('prop-pdf-btn').addEventListener('click', () => {
+  generatePdf()
 })
 
 function generatePdf() {
@@ -1373,16 +1366,7 @@ function generatePdf() {
 
 document.getElementById('prop-deck-btn').addEventListener('click', async () => {
   const btn = document.getElementById('prop-deck-btn')
-  if (btn.textContent === 'Download Deck' && btn.dataset.slides) {
-    await buildDeck(JSON.parse(btn.dataset.slides)); return
-  }
-  btn.textContent = 'Building Deck…'; btn.disabled = true
-  if (!_lastProposal) {
-    const d = await generateProposal(false)
-    if (!d?.success) { showToast('Could not generate proposal.'); btn.textContent = 'Create Deck'; btn.disabled = false; return }
-    _lastProposal = { subject: d.subject, body: d.body }
-    await persistProposal()
-  }
+  btn.textContent = 'Building deck…'; btn.disabled = true
   try {
     const deal = _propDeal
     const r = await fetch('/api/deck', {
@@ -1397,18 +1381,14 @@ document.getElementById('prop-deck-btn').addEventListener('click', async () => {
     })
     const d = await r.json()
     if (d.success) {
-      btn.dataset.slides = JSON.stringify(d.slides)
       await buildDeck(d.slides)
-      btn.textContent = 'Download Deck'
     } else {
       showToast('Deck error: ' + (d.error || 'Unknown'))
-      btn.textContent = 'Create Deck'
     }
   } catch (err) {
     showToast('Deck failed: ' + err.message)
-    btn.textContent = 'Create Deck'
   }
-  btn.disabled = false
+  btn.textContent = 'Create Deck'; btn.disabled = false
 })
 
 async function buildDeck(slides) {
@@ -1418,24 +1398,24 @@ async function buildDeck(slides) {
   slides.forEach(slide => {
     const s = pptx.addSlide()
     if (slide.type === 'title') {
-      s.background = { color: '000000' }
-      s.addText(slide.title    || '', { x:0.5, y:1.5, w:12, h:1.5, fontSize:36, bold:true, color: strip(DESIGN_TOKENS.accent) })
-      s.addText(slide.subtitle || '', { x:0.5, y:3.2, w:12, h:0.8, fontSize:18, color:'ffffff' })
-      s.addText(slide.presenter|| '', { x:0.5, y:4.5, w:12, h:0.6, fontSize:14, color:'ffffff', italic:true })
+      s.background = { color: strip(DESIGN_TOKENS.primary) }
+      s.addText(slide.title     || '', { x:0.5, y:1.5, w:12, h:1.5, fontSize:36, bold:true, color: strip(DESIGN_TOKENS.accent) })
+      s.addText(slide.subtitle  || '', { x:0.5, y:3.2, w:12, h:0.8, fontSize:18, color:'FFFFFF' })
+      s.addText(slide.presenter || '', { x:0.5, y:4.5, w:12, h:0.6, fontSize:14, color:'FFFFFF', italic:true })
     } else {
       s.background = { color: strip(DESIGN_TOKENS.surface) }
-      s.addShape(pptx.ShapeType.rect, { x:0, y:0, w:0.12, h:5.63, fill:{ color: strip(DESIGN_TOKENS.accent) } })
-      s.addText(slide.title || '', { x:0.3, y:0.3, w:12, h:0.7, fontSize:22, bold:true, color: strip(DESIGN_TOKENS.accent) })
+      s.addShape(pptx.ShapeType.rect, { x:0, y:0, w:0.12, h:5.63, fill:{ color: strip(DESIGN_TOKENS.primary) } })
+      s.addText(slide.title || '', { x:0.3, y:0.3, w:12, h:0.7, fontSize:22, bold:true, color: strip(DESIGN_TOKENS.primary) })
       const bulletText = (slide.bullets||[]).map(b => ({
         text: String(b),
-        options: { bullet:{ color: strip(DESIGN_TOKENS.accent) }, color: 'bbbbbb', fontSize:14, paraSpaceAfter:6 }
+        options: { bullet:{ color: strip(DESIGN_TOKENS.accent) }, color: strip(DESIGN_TOKENS.text), fontSize:14, paraSpaceAfter:6 }
       }))
-      if (bulletText.length) s.addText(bulletText, { x:0.3, y:1.2, w:12.2, h:3.8 })
+      s.addText(bulletText, { x:0.3, y:1.2, w:12.2, h:3.8 })
       if (slide.closing) s.addText(slide.closing, { x:0.3, y:4.8, w:12, h:0.6, fontSize:12, italic:true, color: strip(DESIGN_TOKENS.textMuted) })
       s.addText(String(slide.number), { x:12.2, y:5.1, w:0.5, h:0.4, fontSize:10, color: strip(DESIGN_TOKENS.textMuted), align:'right' })
     }
   })
-  await pptx.writeFile({ fileName: clientName(_propDeal.client_id) + '-proposal-deck.pptx' })
+  pptx.writeFile({ fileName: clientName(_propDeal.client_id) + '-proposal-deck.pptx' })
   showToast('✓ Deck downloaded')
 }
 
